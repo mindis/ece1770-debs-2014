@@ -1,8 +1,7 @@
 source "https://rubygems.org"
 
 gem 'redstorm', '~> 0.6.6'
-
-gem 'ruby-debug-base'
+gem 'cql-rb' # alternative to 'cassandra' gem
 
 group :test do
   gem 'rake'

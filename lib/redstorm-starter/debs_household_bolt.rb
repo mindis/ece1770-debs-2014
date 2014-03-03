@@ -4,11 +4,17 @@ class DebsHouseholdBolt < RedStorm::DSL::Bolt
 
   include DebsHelpers
 
-  output_fields :id, :timestamp, :value, :property, :plug_id, :household_id, :house_id
+  DEBUG = false
+
+  configure do
+    debug DEBUG
+  end
+
+  output_fields :timestamp, :value, :property, :plug_id, :household_id, :house_id
 
   on_receive :emit => true, :ack => true, :anchor => true do |tuple| 
     @tuple = tuple
-    [id, timestamp, value, property, plug_id, household_id, house_id]
+    [timestamp, value, property, plug_id, household_id, house_id]
   end
-  
+
 end

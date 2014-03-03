@@ -4,12 +4,14 @@ class DebsHouseCalcBolt < RedStorm::DSL::Bolt
 
   include DebsHelpers
 
+  DEBUG = false
+
   configure do
-    debug true
+    debug DEBUG
   end
 
   # input_fields :id, :timestamp, :house_id, :household_id, :plug_id, :predicted_load
-  output_fields :id, :timestamp, :house_id, :predicted_load
+  output_fields :timestamp, :house_id, :predicted_load
 
   # on_init do
   #   @instantaneous_load = {} # :house_id, :household_id, :plug_id => :timestamp => :value
@@ -21,7 +23,7 @@ class DebsHouseCalcBolt < RedStorm::DSL::Bolt
   on_receive :emit => false, :ack => false, :anchor => false do |tuple|
     @tuple = tuple
     # TODO
-    unanchored_emit(*[1,2,3])
+    unanchored_emit(*[1, 2, 3])
     ack(tuple)
   end
 

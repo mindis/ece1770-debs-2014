@@ -1,8 +1,8 @@
 module DebsHelpers
 
-  def id
-    @tuple[:id]
-  end
+  # def id
+  #   @tuple[:id]
+  # end
 
   def timestamp
     @tuple[:timestamp]
