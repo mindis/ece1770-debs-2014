@@ -1,1 +1,6 @@
-target/*
+/.bundle/
+/.ruby-version
+/Gemfile.lock
+/ivy/
+/target/
+/vendor/
