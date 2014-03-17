@@ -8,17 +8,80 @@ bundle exec redstorm cluster lib/redstorm-starter/debs_topology.rb
 
 - all results grouped per house under house_id
 - save instantaneous load avg for plugs to compute current averages
-- extend Query1 to different slice durations
-- use TTL on Cassandra inserts (ex "USING TTL 86400")
 
+# KAFKA
 
-# TODO
+"Kafka does it better. By having a notion of parallelism—the partition—within the topics, Kafka is able to provide both ordering guarantees and load balancing over a pool of consumer processes. This is achieved by assigning the partitions in the topic to the consumers in the consumer group so that each partition is consumed by exactly one consumer in the group. By doing this we ensure that the consumer is the only reader of that partition and consumes the data in order. Since there are many partitions this still balances the load over many consumer instances. Note however that there cannot be more consumer instances than partitions."
 
-- get Cassandra working; results written to it and shared
-- deal with discontinuities in input data
-- calculate house outputs
-- can we use multiple servers for the same spout? any faster?
-- 
+- One topic. Each house is a partition? Maybe just use 'mod X' to divide them.
+- Setup multiple spouts (at most, one per partition).
+
+Start Kafka: bin/kafka-server-start.sh config/server.properties
+
+- Setup on zookeeper vagrant instance (192.168.50.3)
+- See the 'install-kafka.sh' script in storm-vagrant
+
+---
+
+See https://kafka.apache.org/documentation.html#quickstart
+
+Start the server:
+  > bin/kafka-server-start.sh config/server.properties
+
+Create a topic:
+  > bin/kafka-create-topic.sh --zookeeper localhost:2181 --replica 1 --partition 1 --topic test
+
+We can now see that topic if we run the list topic command:
+  > bin/kafka-list-topic.sh --zookeeper localhost:2181
+
+Send some messages:
+  > bin/kafka-console-producer.sh --broker-list localhost:9092 --topic test
+
+# KAFKA Producer using jruby-kafka gem
+
+  jar_dir = "/Users/dfcarney/src/ece1770/project/src/storm-vagrant/kafka-0.8.0-src/core/target/scala-2.8.0"
+  include Java
+  Dir.glob(File.join(jar_dir, "*.jar")) { |jar|
+    $CLASSPATH << jar
+  }
+
+  require 'jruby-kafka'
+
+  producer_options = {:zk_connect=>"192.168.50.3:2181", :topic_id=>"test", :broker_list=>"192.168.50.3:9092"} 
+  producer = Kafka::Producer.new(producer_options)
+  producer.connect()
+
+  topic = "test"
+  key = "1"
+  message = "This is a test"
+  producer.sendMsg(topic, key, message)
+
+# KAFKA Consumer using jruby-kafka gem
+
+For https://github.com/joekiller/jruby-kafka gem:
+
+jar_dir = "/Users/dfcarney/src/ece1770/project/src/storm-vagrant/kafka-0.8.0-src/core/target/scala-2.8.0"
+include Java
+Dir.glob(File.join(jar_dir, "*.jar")) { |jar|
+  $CLASSPATH << jar
+}
+
+require 'jruby-kafka'
+queue = SizedQueue.new(2000)
+
+consumer_options = {:zk_connect=>"192.168.50.3:2181", :topic_id=>"test", :broker_list=>"192.168.50.3:9092", :group_id => "blorky"} 
+
+group = Kafka::Group.new(consumer_options)
+num_threads = 1
+group.run(num_threads, queue)
+Java::JavaLang::Thread.sleep 3000
+
+# just gets first 20 things & prints out
+until queue.empty?
+  puts(queue.pop)
+end
+
+group.shutdown()
 
 # Casandra DEBUG
 
