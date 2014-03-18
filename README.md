@@ -45,7 +45,9 @@
 - Revise Cassandra setup; refactor into module. Plan on hosting it on Vagrant cluster.
 - Get per-house results working for Query 1.
 - Write basic tests for Query 1.
+- Fix 'invalidate_future_results' method
 - ...
+
 
 - Bootstrap a proper S3 cluster and get everything working there.
 - Benchmarking: figure out what to measure and what to vary.
