@@ -1,15 +1,48 @@
-redstorm install
-redstorm bundle
+# SETUP
 
-bundle exec redstorm local lib/redstorm-starter/debs_topology.rb
-bundle exec redstorm cluster lib/redstorm-starter/debs_topology.rb
+## Remote
+
+- For now, all we need is a Kafka server. For convenience, use the 'zookeeper' 
+  instance in Vagrant and install Kafka 0.8.1 on it.
+
+- You'll need to start kafka manually once ssh'ing into the server:
+  > sudo bin/kafka-server-start.sh config/server.properties
+
+## Local
+
+- For now, develop in 'local mode'. It's easy to debug.
+
+- Changes to the toplogy dependencies and gems require the following to be run:
+ > redstorm install
+ > redstorm bundle
+
+- To run the topology:
+ > bundle exec redstorm local lib/redstorm-starter/debs_topology.rb
+ > bundle exec redstorm cluster lib/redstorm-starter/debs_topology.rb
+
+
+# TIMELINE
+
+- ...
+
+- [March 17, 2014] Spent a day debugging Kafka setup. Trying to get a proper spout working with Storm. Troublesome. Ultimately, needed to switch to storm-kafka-0.8-plus (0.4.0)
+
+- 
+
+
+# Current Issues
+
+==> Read more about how Kafka works.
 
 # Cassandra Setup
 
 - all results grouped per house under house_id
 - save instantaneous load avg for plugs to compute current averages
+- Cassandra running locally (OSX)
 
 # KAFKA
+
+*** NOTE: Kafka running on Vagrant 'zookeeper' instance ***
 
 "Kafka does it better. By having a notion of parallelism—the partition—within the topics, Kafka is able to provide both ordering guarantees and load balancing over a pool of consumer processes. This is achieved by assigning the partitions in the topic to the consumers in the consumer group so that each partition is consumed by exactly one consumer in the group. By doing this we ensure that the consumer is the only reader of that partition and consumes the data in order. Since there are many partitions this still balances the load over many consumer instances. Note however that there cannot be more consumer instances than partitions."
 
@@ -51,7 +84,7 @@ Send some messages:
   producer = Kafka::Producer.new(producer_options)
   producer.connect()
 
-  topic = "test"
+  topic = "testtopic"
   key = "1"
   message = "This is a test"
   producer.sendMsg(topic, key, message)
@@ -69,7 +102,7 @@ Dir.glob(File.join(jar_dir, "*.jar")) { |jar|
 require 'jruby-kafka'
 queue = SizedQueue.new(2000)
 
-consumer_options = {:zk_connect=>"192.168.50.3:2181", :topic_id=>"test", :broker_list=>"192.168.50.3:9092", :group_id => "blorky"} 
+consumer_options = {:zk_connect=>"192.168.50.3:2181", :topic_id=>"testtopic", :broker_list=>"192.168.50.3:9092", :group_id => "blorky"} 
 
 group = Kafka::Group.new(consumer_options)
 num_threads = 1
