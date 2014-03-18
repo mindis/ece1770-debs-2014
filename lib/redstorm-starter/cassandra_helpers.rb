@@ -1,73 +1,24 @@
-require 'red_storm'
-require 'zlib'
+require 'cql'
 
-# https://github.com/colinsurprenant/redstorm/wiki/Ruby-DSL-Documentation
+module CassandraHelpers
 
-class DebsDataSpout < RedStorm::DSL::Spout
-
-  DEBUG = false
-
-  output_fields :timestamp, :value, :property, :plug_id, :household_id, :house_id
-
-  configure do
-    debug DEBUG
-    # reliable true
-  end
-
-  on_send :emit => false do
-    if @data.size > 0
-      data = @data.shift #if @data.size > 0
-      id = data[0]
-      data = [data[1].to_i, data[2].to_f, data[3].to_i, data[4].to_i, data[5].to_i, data[6].to_i]
-      puts "ID #{id}: #{data}" if DEBUG
-      reliable_emit(data[0], *data)
+  def store
+    if @store == nil
+      @store = cassandra_client
+      @store.use('measurements')
     end
+    @store
   end
 
-  on_init do
-    setup_store
-
-    filepath = "/Users/dfcarney/src/ece1770/project/sorted.csv.gz"
-    fd = File::open(filepath, "r")
-    gz = Zlib::GzipReader.new(fd)
-
-    # id, timestamp, value, property, plug_id, household_id, house_id
-    @data = []
-    while(gz.lineno < 100000) 
-      id, timestamp, value, property, plug_id, household_id, house_id = gz.readline.strip.split(",")
-      @data << [id.to_i, timestamp.to_i, value.to_f, property.to_i, plug_id.to_i, household_id.to_i, house_id.to_i]
-    end
-    true
-  end
-
-  on_close do
-    puts "CLOSING #{self.class.to_s}"
-    # ...
-  end
-
-  on_ack do |msg_id|
-    # puts "ACK #{msg_id}"
-    # ...
-  end
-
-  on_fail do |msg_id|
-    puts "FAIL #{msg_id}"
-    # ...
-  end
-
-  on_activate do
-    puts "ACTIVATE"
-    # ...
-  end
-
-  on_deactivate do
-    puts "DEACTIVATE"
-    # ...
+  def cassandra_client
+    Cql::Client.connect(hosts: ['127.0.0.1'])
   end
 
   # It's convenient to initialize this here.
-  def setup_store
-    client = Cql::Client.connect(hosts: ['127.0.0.1'])
+  def setup_cassandra
+    puts "<<< SETTING UP CASSANDRA >>>"
+
+    client = cassandra_client
 
     # Don't drop and recreate the keyspace as that might disrupt (debug) clients
     # client.execute('DROP KEYSPACE IF EXISTS measurements')

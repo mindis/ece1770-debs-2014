@@ -1,20 +1,11 @@
 require 'red_storm'
-require 'cql'
 
 class DebsPlugBolt < RedStorm::DSL::Bolt
 
   include DebsHelpers
+  include CassandraHelpers
 
   DEBUG = false
-
-  def store
-    if @store == nil
-      puts "CONNECTING TO STORE" if DEBUG
-      @store = Cql::Client.connect(hosts: ['127.0.0.1'])
-      @store.use('measurements')
-    end
-    @store
-  end
 
   configure do
     debug DEBUG
@@ -141,30 +132,8 @@ class DebsPlugBolt < RedStorm::DSL::Bolt
     predicted_load
   end
 
-  def median(array)
-    array = array.compact
-    if array.size == 0
-      return 0
-    end
-    sorted = array.sort
-    len = sorted.length
-    (sorted[(len - 1) / 2] + sorted[len / 2]) / 2.0
-  end
-
   def number_of_slices_per_day
     (24 * 60 * 60) / @slice_duration_in_seconds
-  end
-
-  def tuple_contains_load_value?
-    property == 1
-  end
-
-  def round_down_timestamp
-    timestamp - (timestamp % @slice_duration_in_seconds)
-  end
-
-  def round_up_timestamp
-    round_down_timestamp + @slice_duration_in_seconds
   end
 
   def slice_index

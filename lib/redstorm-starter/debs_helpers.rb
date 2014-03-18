@@ -28,4 +28,26 @@ module DebsHelpers
     @tuple[:plug_id]
   end
 
+  def round_down_timestamp
+    timestamp - (timestamp % @slice_duration_in_seconds)
+  end
+
+  def round_up_timestamp
+    round_down_timestamp + @slice_duration_in_seconds
+  end
+
+  def tuple_contains_load_value?
+    property == 1
+  end
+
+  def median(array)
+    array = array.compact
+    if array.size == 0
+      return 0
+    end
+    sorted = array.sort
+    len = sorted.length
+    (sorted[(len - 1) / 2] + sorted[len / 2]) / 2.0
+  end
+
 end
