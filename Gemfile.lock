@@ -3,6 +3,7 @@ GEM
   specs:
     cql-rb (1.2.0)
     diff-lcs (1.2.5)
+    jruby-kafka (0.0.12)
     rake (10.1.1)
     redstorm (0.6.6)
       rake
@@ -21,6 +22,7 @@ PLATFORMS
 
 DEPENDENCIES
   cql-rb
+  jruby-kafka
   rake
   redstorm (~> 0.6.6)
   rspec (~> 2.13)
