@@ -23,16 +23,30 @@
 
 # TIMELINE
 
+- [< March 17, 2014]
+  - Bootstrapped Vagrant cluster using storm-vagrant
+  - Abandoned pure Java & Closure programming in favour of JRuby. Much thanks to 'redstorm' maintainer.
+  - Got basic Query 1 stream working for one time slice, plug-only. Storing results in memory.
+  - Added Cassandra server (running locally) to save predicted and final results.
+  - (more stuff that I'll fill in later)
+
+- [March 17, 2014] Spent a day debugging Kafka setup. Trying to get a proper spout working with Storm. Troublesome.
+
+- [March 18, 2014]
+  - Finally got Kafka spout working. Needed to switch to storm-kafka-0.8-plus (0.4.0).
+  - ...
+
+# Current Issues/TODOs
+
+- Need to read more about how Kafka works.
+- Revise Cassandra setup; refactor into module. Plan on hosting it on Vagrant cluster.
+- Get per-house results working for Query 1.
+- Write basic tests for Query 1.
 - ...
 
-- [March 17, 2014] Spent a day debugging Kafka setup. Trying to get a proper spout working with Storm. Troublesome. Ultimately, needed to switch to storm-kafka-0.8-plus (0.4.0)
+- Bootstrap a proper S3 cluster and get everything working there.
+- Benchmarking: figure out what to measure and what to vary.
 
-- 
-
-
-# Current Issues
-
-==> Read more about how Kafka works.
 
 # Cassandra Setup
 
@@ -93,39 +107,39 @@ Send some messages:
 
 For https://github.com/joekiller/jruby-kafka gem:
 
-jar_dir = "/Users/dfcarney/src/ece1770/project/src/storm-vagrant/kafka-0.8.0-src/core/target/scala-2.8.0"
-include Java
-Dir.glob(File.join(jar_dir, "*.jar")) { |jar|
-  $CLASSPATH << jar
-}
+  jar_dir = "/Users/dfcarney/src/ece1770/project/src/storm-vagrant/kafka-0.8.0-src/core/target/scala-2.8.0"
+  include Java
+  Dir.glob(File.join(jar_dir, "*.jar")) { |jar|
+    $CLASSPATH << jar
+  }
 
-require 'jruby-kafka'
-queue = SizedQueue.new(2000)
+  require 'jruby-kafka'
+  queue = SizedQueue.new(2000)
 
-consumer_options = {:zk_connect=>"192.168.50.3:2181", :topic_id=>"testtopic", :broker_list=>"192.168.50.3:9092", :group_id => "blorky"} 
+  consumer_options = {:zk_connect=>"192.168.50.3:2181", :topic_id=>"testtopic", :broker_list=>"192.168.50.3:9092", :group_id => "blorky"} 
 
-group = Kafka::Group.new(consumer_options)
-num_threads = 1
-group.run(num_threads, queue)
-Java::JavaLang::Thread.sleep 3000
+  group = Kafka::Group.new(consumer_options)
+  num_threads = 1
+  group.run(num_threads, queue)
+  Java::JavaLang::Thread.sleep 3000
 
-# just gets first 20 things & prints out
-until queue.empty?
-  puts(queue.pop)
-end
+  # just gets first 20 things & prints out
+  until queue.empty?
+    puts(queue.pop)
+  end
 
-group.shutdown()
+  group.shutdown()
 
 # Casandra DEBUG
 
-require 'cql'
-@store = Cql::Client.connect(hosts: ['127.0.0.1'])
-@store.use('measurements')
-q1 = "SElECT COUNT(*) FROM InstantaneousPlugLoads"
-@store.execute(q1)
+  require 'cql'
+  @store = Cql::Client.connect(hosts: ['127.0.0.1'])
+  @store.use('measurements')
+  q1 = "SElECT COUNT(*) FROM InstantaneousPlugLoads"
+  @store.execute(q1)
 
-q2 = "SElECT COUNT(*) FROM AveragePlugLoads"
-@store.execute(q2)
+  q2 = "SElECT COUNT(*) FROM AveragePlugLoads"
+  @store.execute(q2)
 
 # redstorm-starter
 
