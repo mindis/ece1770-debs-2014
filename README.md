@@ -2,7 +2,10 @@
 
 ## Remote
 
-- For now, all we need is a Kafka server. For convenience, use the 'zookeeper' 
+- For cluster-based testing, use storm-vagrant (https://github.com/ptgoetz/storm-vagrant)
+  - I updated it to use 'precise64' and storm-0.9.0.1
+
+- We additionally need is a Kafka server. For convenience, use the 'zookeeper' 
   instance in Vagrant and install Kafka 0.8.1 on it.
 
 - You'll need to start kafka manually once ssh'ing into the server:
@@ -10,7 +13,7 @@
 
 ## Local
 
-- For now, develop in 'local mode'. It's easy to debug.
+- For now, develop in 'local mode' with a Vagrant-baseed Kafka server. It's easy to debug.
 
 - Changes to the toplogy dependencies and gems require the following to be run:
  > redstorm install
@@ -47,6 +50,8 @@
 - Bootstrap a proper S3 cluster and get everything working there.
 - Benchmarking: figure out what to measure and what to vary.
 
+- KAFKA: partition the input data? Setup multiple spouts (at most, one per partition)?
+  - One topic. Each house is a partition? Maybe just use 'mod X' to divide them?
 
 # Cassandra Setup
 
@@ -58,15 +63,7 @@
 
 *** NOTE: Kafka running on Vagrant 'zookeeper' instance ***
 
-"Kafka does it better. By having a notion of parallelism—the partition—within the topics, Kafka is able to provide both ordering guarantees and load balancing over a pool of consumer processes. This is achieved by assigning the partitions in the topic to the consumers in the consumer group so that each partition is consumed by exactly one consumer in the group. By doing this we ensure that the consumer is the only reader of that partition and consumes the data in order. Since there are many partitions this still balances the load over many consumer instances. Note however that there cannot be more consumer instances than partitions."
-
-- One topic. Each house is a partition? Maybe just use 'mod X' to divide them.
-- Setup multiple spouts (at most, one per partition).
-
-Start Kafka: bin/kafka-server-start.sh config/server.properties
-
-- Setup on zookeeper vagrant instance (192.168.50.3)
-- See the 'install-kafka.sh' script in storm-vagrant
+"Kafka does it better. By having a notion of parallelism—the partition—within the topics, Kafka is able to provide both ordering guarantees and load balancing over a pool of consumer processes. This is achieved by assigning the partitions in the topic to the consumers in the consumer group so that each partition is consumed by exactly one consumer in the group. By doing this we ensure that the consumer is the only reader of that partition and consumes the data in order. Since there are many partitions t#his still balances the load over many consumer instances. Note however that there cannot be more consumer instances than partitions."
 
 ---
 
@@ -84,66 +81,68 @@ We can now see that topic if we run the list topic command:
 Send some messages:
   > bin/kafka-console-producer.sh --broker-list localhost:9092 --topic test
 
-# KAFKA Producer using jruby-kafka gem
+# jruby-kafka gem
 
-  jar_dir = "/Users/dfcarney/src/ece1770/project/src/storm-vagrant/kafka-0.8.0-src/core/target/scala-2.8.0"
-  include Java
-  Dir.glob(File.join(jar_dir, "*.jar")) { |jar|
-    $CLASSPATH << jar
-  }
+    https://github.com/joekiller/jruby-kafka
 
-  require 'jruby-kafka'
+## Simple KAFKA Producer
 
-  producer_options = {:zk_connect=>"192.168.50.3:2181", :topic_id=>"test", :broker_list=>"192.168.50.3:9092"} 
-  producer = Kafka::Producer.new(producer_options)
-  producer.connect()
+    jar_dir = "/Users/dfcarney/src/ece1770/project/src/storm-vagrant/kafka-0.8.0-src/core/target/scala-2.8.0"
+    include Java
+    Dir.glob(File.join(jar_dir, "*.jar")) { |jar|
+      $CLASSPATH << jar
+    }
 
-  topic = "testtopic"
-  key = "1"
-  message = "This is a test"
-  producer.sendMsg(topic, key, message)
+    require 'jruby-kafka'
 
-# KAFKA Consumer using jruby-kafka gem
+    producer_options = {:zk_connect=>"192.168.50.3:2181", :topic_id=>"test", :broker_list=>"192.168.50.3:9092"} 
+    producer = Kafka::Producer.new(producer_options)
+    producer.connect()
 
-For https://github.com/joekiller/jruby-kafka gem:
+    topic = "testtopic"
+    key = "1"
+    message = "This is a test"
+    producer.sendMsg(topic, key, message)
 
-  jar_dir = "/Users/dfcarney/src/ece1770/project/src/storm-vagrant/kafka-0.8.0-src/core/target/scala-2.8.0"
-  include Java
-  Dir.glob(File.join(jar_dir, "*.jar")) { |jar|
-    $CLASSPATH << jar
-  }
+## Simple KAFKA Consumer
 
-  require 'jruby-kafka'
-  queue = SizedQueue.new(2000)
+    jar_dir = "/Users/dfcarney/src/ece1770/project/src/storm-vagrant/kafka-0.8.0-src/core/target/scala-2.8.0"
+    include Java
+    Dir.glob(File.join(jar_dir, "*.jar")) { |jar|
+      $CLASSPATH << jar
+    }
 
-  consumer_options = {:zk_connect=>"192.168.50.3:2181", :topic_id=>"testtopic", :broker_list=>"192.168.50.3:9092", :group_id => "blorky"} 
+    require 'jruby-kafka'
+    queue = SizedQueue.new(2000)
 
-  group = Kafka::Group.new(consumer_options)
-  num_threads = 1
-  group.run(num_threads, queue)
-  Java::JavaLang::Thread.sleep 3000
+    consumer_options = {:zk_connect=>"192.168.50.3:2181", :topic_id=>"testtopic", :broker_list=>"192.168.50.3:9092", :group_id => "blorky"} 
 
-  # just gets first 20 things & prints out
-  until queue.empty?
-    puts(queue.pop)
-  end
+    group = Kafka::Group.new(consumer_options)
+    num_threads = 1
+    group.run(num_threads, queue)
+    Java::JavaLang::Thread.sleep 3000
 
-  group.shutdown()
+    # just gets first 20 things & prints out
+    until queue.empty?
+      puts(queue.pop)
+    end
+
+    group.shutdown()
 
 # Casandra DEBUG
 
-  require 'cql'
-  @store = Cql::Client.connect(hosts: ['127.0.0.1'])
-  @store.use('measurements')
-  q1 = "SElECT COUNT(*) FROM InstantaneousPlugLoads"
-  @store.execute(q1)
+    require 'cql'
+    @store = Cql::Client.connect(hosts: ['127.0.0.1'])
+    @store.use('measurements')
+    q1 = "SElECT COUNT(*) FROM InstantaneousPlugLoads"
+    @store.execute(q1)
 
-  q2 = "SElECT COUNT(*) FROM AveragePlugLoads"
-  @store.execute(q2)
+    q2 = "SElECT COUNT(*) FROM AveragePlugLoads"
+    @store.execute(q2)
 
 # redstorm-starter
 
-Example topology and its specs.
+This project is based on the contents of https://github.com/colinsurprenant/redstorm-starter
 
 ## Dependencies
 
