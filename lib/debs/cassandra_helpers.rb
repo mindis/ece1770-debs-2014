@@ -69,12 +69,14 @@ module CassandraHelpers
         # nop
       end
 
+      # slice_index is a convenience. It could be determined by timestamp.
       table_definition = <<-TABLEDEF
         CREATE TABLE InstantaneousPlugLoads (
         plug_id BIGINT,
         house_id BIGINT,
         household_id BIGINT,
         timestamp BIGINT,
+        slice_index INT,
         load DOUBLE,
         PRIMARY KEY (house_id, household_id, plug_id, timestamp)
         )
@@ -105,6 +107,14 @@ module CassandraHelpers
       TABLEDEF
       client.execute(table_definition)
       # client.add(table_definition)
+
+      index_definition = <<-INDEXDEF
+        CREATE INDEX InstantaneousPlugLoadsSliceIndex ON
+          InstantaneousPlugLoads
+          (slice_index)
+      INDEXDEF
+      client.execute(index_definition)
+
 
       index_definition = <<-INDEXDEF
         CREATE INDEX AveragePlugLoadsPredictedIndex ON
