@@ -4,14 +4,14 @@ java_import 'storm.kafka.KafkaConfig'
 java_import 'storm.kafka.ZkHosts'
 
 require 'red_storm'
-require 'redstorm-starter/debs_helpers'
-require 'redstorm-starter/cassandra_helpers'
-require 'redstorm-starter/plug_helpers'
-require 'redstorm-starter/debs_data_bolt'
-require 'redstorm-starter/debs_house_bolt'
-require 'redstorm-starter/debs_household_bolt'
-require 'redstorm-starter/debs_plug_bolt'
-require 'redstorm-starter/debs_house_calc_bolt'
+require 'debs/debs_helpers'
+require 'debs/cassandra_helpers'
+require 'debs/plug_helpers'
+require 'debs/debs_data_bolt'
+require 'debs/debs_house_bolt'
+require 'debs/debs_household_bolt'
+require 'debs/debs_plug_bolt'
+require 'debs/debs_house_calc_bolt'
 
 class KafkaTopology < RedStorm::DSL::Topology
 
@@ -19,7 +19,7 @@ class KafkaTopology < RedStorm::DSL::Topology
 
   spout_config = SpoutConfig.new(
     KafkaConfig::ZkHosts.new("192.168.50.3:2181", "/brokers"),
-    "debs",        # topic to read from
+    "debs-1",        # topic to read from
     "/consumers",  # Zookeeper root path to store the consumer offsets
     "someid"       # Zookeeper consumer id to store the consumer offsets
   )
