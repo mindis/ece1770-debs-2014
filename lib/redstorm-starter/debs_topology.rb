@@ -6,6 +6,7 @@ java_import 'storm.kafka.ZkHosts'
 require 'red_storm'
 require 'redstorm-starter/debs_helpers'
 require 'redstorm-starter/cassandra_helpers'
+require 'redstorm-starter/plug_helpers'
 require 'redstorm-starter/debs_data_bolt'
 require 'redstorm-starter/debs_house_bolt'
 require 'redstorm-starter/debs_household_bolt'
@@ -60,6 +61,9 @@ class KafkaTopology < RedStorm::DSL::Topology
 
   on_submit do |env|
     setup_cassandra
+
+    # TODO: the spout should do this.
+    set_base_timestamp(1377986401)
 
     if env == :local
       sleep(60)

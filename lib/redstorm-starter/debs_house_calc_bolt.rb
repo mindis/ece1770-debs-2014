@@ -3,6 +3,7 @@ require 'red_storm'
 class DebsHouseCalcBolt < RedStorm::DSL::Bolt
 
   include DebsHelpers
+  include CassandraHelpers
 
   DEBUG = false
 

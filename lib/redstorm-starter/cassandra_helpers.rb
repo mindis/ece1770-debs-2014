@@ -14,6 +14,19 @@ module CassandraHelpers
     Cql::Client.connect(hosts: ['127.0.0.1'])
   end
 
+  def set_base_timestamp(ts)
+    query = "INSERT INTO Globals (name, value) VALUES ('%s', '%s')" % ["base_timestamp", ts.to_s]
+    store.execute(query)
+  end
+
+  def get_base_timestamp
+    query = "SELECT value FROM Globals WHERE name = '%s'" % ["base_timestamp"]
+    results = store.execute(query)
+    value = results.first["value"]
+    raise "No base_timestamp set!" if value.nil?
+    value.to_i
+  end
+
   # It's convenient to initialize this here.
   def setup_cassandra
     puts "<<< SETTING UP CASSANDRA >>>"
@@ -50,6 +63,12 @@ module CassandraHelpers
         # nop
       end
 
+      begin
+        client.execute("DROP TABLE IF EXISTS Globals")
+      rescue Cql::QueryError => e
+        # nop
+      end
+
       table_definition = <<-TABLEDEF
         CREATE TABLE InstantaneousPlugLoads (
         plug_id BIGINT,
@@ -72,6 +91,16 @@ module CassandraHelpers
         load DOUBLE,
         predicted BOOLEAN,
         PRIMARY KEY (house_id, household_id, plug_id, slice_index)
+        )
+      TABLEDEF
+      client.execute(table_definition)
+      # client.add(table_definition)
+
+      table_definition = <<-TABLEDEF
+        CREATE TABLE Globals (
+        name VARCHAR,
+        value VARCHAR,
+        PRIMARY KEY (name)
         )
       TABLEDEF
       client.execute(table_definition)

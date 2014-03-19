@@ -29,11 +29,30 @@ module DebsHelpers
   end
 
   def round_down_timestamp
-    timestamp - (timestamp % @slice_duration_in_seconds)
+    timestamp - (timestamp % slice_duration_in_seconds)
   end
 
   def round_up_timestamp
-    round_down_timestamp + @slice_duration_in_seconds
+    round_down_timestamp + slice_duration_in_seconds
+  end
+
+  def rounded_down_base_timestamp
+    @rounded_down_base_timestamp ||= get_base_timestamp - (get_base_timestamp % slice_duration_in_seconds)
+  end
+
+  def slice_duration_in_seconds
+    # TODO: hardcoded for now. Later, need to support different-sized slices.
+    60
+  end
+
+  def number_of_slices_per_day
+    (24 * 60 * 60) / slice_duration_in_seconds
+  end
+
+  def slice_index
+    # TODO: hardcoded slice_duration_in_seconds for now. Later, need to support 
+    # different-sized slices (which means numerous indexes).
+    ((round_down_timestamp - rounded_down_base_timestamp) / slice_duration_in_seconds).to_i
   end
 
   def tuple_contains_load_value?
