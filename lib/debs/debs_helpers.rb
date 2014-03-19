@@ -59,6 +59,10 @@ module DebsHelpers
     property == 1
   end
 
+  def sum(array)
+    array.inject(0){|s,i| s = s + i}
+  end
+
   def median(array)
     array = array.compact
     if array.size == 0

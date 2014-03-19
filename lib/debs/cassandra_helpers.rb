@@ -51,23 +51,24 @@ module CassandraHelpers
       raise e
     ensure
 
-      begin
-        client.execute("DROP TABLE IF EXISTS InstantaneousPlugLoads")
-      rescue Cql::QueryError => e
-        # nop
+      tables = [
+        "InstantaneousPlugLoads",
+        "AveragePlugLoads",
+        "AverageHouseLoads",
+        "Globals"
+      ]
+
+      tables.each do |table|
+        begin
+          client.execute("DROP TABLE IF EXISTS #{table}")
+        rescue Cql::QueryError => e
+          # nop
+        end
       end
 
-      begin
-        client.execute("DROP TABLE IF EXISTS AveragePlugLoads")
-      rescue Cql::QueryError => e
-        # nop
-      end
-
-      begin
-        client.execute("DROP TABLE IF EXISTS Globals")
-      rescue Cql::QueryError => e
-        # nop
-      end
+      #
+      # TABLES
+      #
 
       # slice_index is a convenience. It could be determined by timestamp.
       table_definition = <<-TABLEDEF
@@ -99,6 +100,17 @@ module CassandraHelpers
       # client.add(table_definition)
 
       table_definition = <<-TABLEDEF
+        CREATE TABLE AverageHouseLoads (
+        house_id BIGINT,
+        slice_index INT,
+        load DOUBLE,
+        predicted BOOLEAN,
+        PRIMARY KEY (house_id, slice_index)
+        )
+      TABLEDEF
+      client.execute(table_definition)
+
+      table_definition = <<-TABLEDEF
         CREATE TABLE Globals (
         name VARCHAR,
         value VARCHAR,
@@ -108,6 +120,10 @@ module CassandraHelpers
       client.execute(table_definition)
       # client.add(table_definition)
 
+      #
+      # INDEXES
+      #
+
       index_definition = <<-INDEXDEF
         CREATE INDEX InstantaneousPlugLoadsSliceIndex ON
           InstantaneousPlugLoads
@@ -115,10 +131,23 @@ module CassandraHelpers
       INDEXDEF
       client.execute(index_definition)
 
-
       index_definition = <<-INDEXDEF
         CREATE INDEX AveragePlugLoadsPredictedIndex ON
           AveragePlugLoads
+          (predicted)
+      INDEXDEF
+      client.execute(index_definition)
+
+      index_definition = <<-INDEXDEF
+        CREATE INDEX AveragePlugLoadsSliceIndex ON
+          AveragePlugLoads
+          (slice_index)
+      INDEXDEF
+      client.execute(index_definition)
+
+      index_definition = <<-INDEXDEF
+        CREATE INDEX AverageHouseLoadsPredictedIndex ON
+          AverageHouseLoads
           (predicted)
       INDEXDEF
       client.execute(index_definition)
