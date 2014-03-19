@@ -1,3 +1,7 @@
+# DEBS Grand Challenge 2014
+
+- http://www.cse.iitb.ac.in/debs2014/?page_id=42
+
 # SETUP
 
 ## Remote
@@ -11,6 +15,12 @@
 - You'll need to start kafka manually once ssh'ing into the server:
   > sudo bin/kafka-server-start.sh config/server.properties
 
+- Monitoring here: http://192.168.50.4:8080/
+
+- To run the topology:
+ > bundle exec redstorm cluster lib/debs/debs_topology.rb
+
+
 ## Local
 
 - For now, develop in 'local mode' with a Vagrant-baseed Kafka server. It's easy to debug.
@@ -20,9 +30,8 @@
  > redstorm bundle
 
 - To run the topology:
- > bundle exec redstorm local lib/debs/debs_topology.rb
+ > bundle exec redstorm jar lib/debs/debs_topology.rb 
  > bundle exec redstorm cluster lib/debs/debs_topology.rb
-
 
 # TIMELINE
 
@@ -47,6 +56,7 @@
 
 # Current Issues/TODOs
 
+- Get working on Vagrant cluster.
 - Need to read more about how Kafka works.
 - Don't calculate house results all the time. Can we do this lazily or on demand?
 - Fix 'invalidate_future_results' method
@@ -150,6 +160,12 @@ Send some messages:
 
 This project is based on the contents of https://github.com/colinsurprenant/redstorm-starter
 
+## Related Docs
+
+- https://github.com/colinsurprenant/redstorm/wiki/Ruby-DSL-Documentation
+
+- https://github.com/nathanmarz/storm/wiki/Concepts
+
 ## Dependencies
 
 Tested with:
@@ -164,3 +180,16 @@ $ bundle install
 $ bundle exec redstorm install
 $ bundle exec rake spec
 ```
+
+# MISC STUFF
+
+- Installing Scala:
+ - https://gist.github.com/visenger/5496675
+ - http://yurisubach.com/blog/2013/10/22/how-to-install-scala-and-sbt-to-ubuntu-12-dot-04-lts/
+
+- Ubuntu/Cassandra/Kafka/Storm walkthrough
+ - http://www.kashifshah.net/blog/2013/11/cassandra-kafka-storm-virtualbox-ubuntu-server-13-10/
+
+- Installing ruby1.9.3 on Ubuntu
+ - http://leonard.io/blog/2012/05/installing-ruby-1-9-3-on-ubuntu-12-04-precise-pengolin/
+
