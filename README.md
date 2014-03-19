@@ -37,17 +37,21 @@
 
 - [March 18, 2014]
   - Finally got Kafka spout working. Needed to switch to storm-kafka-0.8-plus (0.4.0).
-  - ...
+  - Refactor Cassandra, Plug, and other stuff into modules
+  - Get per-house results working for Query 1.
+
+- [March 19, 2014]
+  - Wrote some basic tests for Query 1 (test.rb, using test1.csv and test2.csv)
+  - Tests discovered one bug with house load calc. Easily fixed.
+
 
 # Current Issues/TODOs
 
 - Need to read more about how Kafka works.
-- Revise Cassandra setup; refactor into module. Plan on hosting it on Vagrant cluster.
-- Get per-house results working for Query 1.
-- Write basic tests for Query 1.
+- Don't calculate house results all the time. Can we do this lazily or on demand?
 - Fix 'invalidate_future_results' method
-- ...
-
+- Get rid of "ALLOW FILTERING" clause on some Cassandra queries
+- More testing/validating results.
 
 - Bootstrap a proper S3 cluster and get everything working there.
 - Benchmarking: figure out what to measure and what to vary.
