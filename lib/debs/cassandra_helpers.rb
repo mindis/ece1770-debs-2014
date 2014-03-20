@@ -2,6 +2,8 @@ require 'cql'
 
 module CassandraHelpers
 
+  CASSANDRA_HOST="192.168.50.4"
+
   def store
     if @store == nil
       @store = cassandra_client
@@ -11,7 +13,7 @@ module CassandraHelpers
   end
 
   def cassandra_client
-    Cql::Client.connect(hosts: ['127.0.0.1'])
+    Cql::Client.connect(hosts: [CASSANDRA_HOST])
   end
 
   def set_base_timestamp(ts)
