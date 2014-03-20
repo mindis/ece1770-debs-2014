@@ -1,4 +1,7 @@
 require 'red_storm'
+require 'debs/debs_helpers'
+require 'debs/cassandra_helpers'
+require 'debs/plug_helpers'
 
 class DebsHouseBolt < RedStorm::DSL::Bolt
 
