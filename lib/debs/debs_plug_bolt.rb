@@ -16,7 +16,7 @@ class DebsPlugBolt < RedStorm::DSL::Bolt
   end
 
   # input_fields :id, :timestamp, :value, :property, :plug_id, :household_id, :house_id
-  output_fields :timestamp, :house_id, :household_id, :plug_id, :predicted_load
+  output_fields :timestamp, :value, :property, :plug_id, :household_id, :house_id
 
   on_init do
     # nop
@@ -27,8 +27,7 @@ class DebsPlugBolt < RedStorm::DSL::Bolt
     @tuple = tuple
     if tuple_contains_load_value?
       update_current_plug_load
-      predicted = predict_plug_load
-      datum = [timestamp, house_id, household_id, plug_id, predicted]
+      datum = [timestamp, value, property, plug_id, household_id, house_id]
       anchored_emit(tuple, *datum)
     end
     ack(tuple)

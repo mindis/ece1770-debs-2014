@@ -10,7 +10,7 @@ class DebsDataBolt < RedStorm::DSL::Bolt
   include Java
   include DebsHelpers
 
-  DEBUG = true
+  DEBUG = false
 
   output_fields :timestamp, :value, :property, :plug_id, :household_id, :house_id
 
