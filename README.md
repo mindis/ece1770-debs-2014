@@ -4,18 +4,35 @@
 
 # SETUP
 
-## Remote
+## AWS
+
+- TODO: Use storm-deploy (https://github.com/nathanmarz/storm-deploy)
+ - See http://blog.safaribooksonline.com/2013/12/27/storm-deploy-amazon-ec2/
+
+## Vagrant
+
+- If there's a problem with Vagrant (on OSX), first try:
+ - sudo /Library/StartupItems/VirtualBox/VirtualBox restart
 
 - For cluster-based testing, use storm-vagrant (https://github.com/ptgoetz/storm-vagrant)
-  - I updated it to use 'precise64' and storm-0.9.0.1
+  - I updated it to use 'precise64' and storm-0.9.0.1, 2 GB of RAM per instance
 
 - We additionally need is a Kafka server. For convenience, use the 'zookeeper' 
-  instance in Vagrant and install Kafka 0.8.1 on it.
+  instance in Vagrant and install Kafka 0.8.1 on it. There's a storm-vagrant
+  'install-kafka.sh' script for this.
 
 - You'll need to start kafka manually once ssh'ing into the server:
   > sudo bin/kafka-server-start.sh config/server.properties
 
-- Monitoring here: http://192.168.50.4:8080/
+- Install Kafka
+ - modify host.name to point to the public IP
+ - start the server manually
+
+- Nimbus here: http://192.168.50.4:8080/
+
+- modify 'rpc_address' setting in /etc/cassandra/cassandra.yaml and ensure that clients can connect to Cassandra
+
+- setup the Cassandra DB manually using the 'bin/setup_cassandra.rb' script
 
 - To run the topology:
  > bundle exec redstorm cluster lib/debs/debs_topology.rb
@@ -52,19 +69,64 @@
 - [March 19, 2014]
   - Wrote some basic tests for Query 1 (test.rb, using test1.csv and test2.csv)
   - Tests discovered one bug with house load calc. Easily fixed.
+  - Bootstrap Vagrant cluster for storm
+   - upgrade instances to use Ruby 1.9.3, Java 1.7
+   - getting weird errors when submitting to storm cluster. 
+    - Verify Java/Ruby versions
+    - configure ~/.storm/storm.yml
+    - Attempt to build & submit from Ubuntu vagrant 'nimbus' instance
+     - apt-get update
+     - apt-get upgrade
+     - apt-get install curl ant git-core 
+     - install Cassandra (http://java.dzone.com/articles/installing-apache-cassandra)
+     - TODO Figure out how to start/daemonize Cassandra on startup
+     - install RVM
+     - install JRuby 1.7.4 (> rvm install jruby-1.7.4)
+     - check out this source code
+     - gem install bundler
+     - bundle install
+     - redstorm install
+     - redstorm bundle
+     - test locally (DONE)
+     - TODO test submitting to cluster
+
+- [March 21, 2014]
+  - Finished setting up test Vagrant cluster:
+    - Cassandra running on 'zookeeper' node
+    - Kafka running on 'nimbus' node
+    - Increase RAM to 2 GB for each of the 4 systems
+    - Installed Oracle Java7
+    - Debugged various issues with 'redstorm' gem (modules not loaded in jar, etc)
+  - Initial tests show that Cassandra single node is under very heavy load
+  - 
+
+- [March 22, 2014]
+  - Experimented with running Cassandra in a separate Vagrant instance/cluster
+  - Experimented with running Cassandra direclty on my laptop; 
+    - reconfigure Vagrant cluster to use Bridged mode
+    - update Vagrantfile
+    - update /etc/hosts files
+    - modify my cassandra.yml and firewall settings so that Vagrant can connect to Cassandra
+  - Rebootstrap cluster w/ 5 machines (original 4 + Cassandra) and do some testing.
+
+- [March 30, 2014]
+  - Get rid of "ALLOW FILTERING" clause on some Cassandra queries
+
+
+
+- NEXT: Get working on AWS
 
 
 # Current Issues/TODOs
 
-- Get working on Vagrant cluster.
+- Bootstrap a proper AWS cluster and get everything working there.
+- Benchmarking: figure out what to measure and what to vary.
+
 - Need to read more about how Kafka works.
 - Don't calculate house results all the time. Can we do this lazily or on demand?
 - Fix 'invalidate_future_results' method
-- Get rid of "ALLOW FILTERING" clause on some Cassandra queries
 - More testing/validating results.
 
-- Bootstrap a proper S3 cluster and get everything working there.
-- Benchmarking: figure out what to measure and what to vary.
 
 - KAFKA: partition the input data? Setup multiple spouts (at most, one per partition)?
   - One topic. Each house is a partition? Maybe just use 'mod X' to divide them?
@@ -129,7 +191,7 @@ Send some messages:
     }
 
     require 'jruby-kafka'
-    queue = SizedQueue.new(2000)
+    queue = SizedQueue.new(20)
 
     consumer_options = {:zk_connect=>"192.168.50.3:2181", :topic_id=>"testtopic", :broker_list=>"192.168.50.3:9092", :group_id => "blorky"} 
 
