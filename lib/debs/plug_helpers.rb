@@ -90,9 +90,7 @@ module PlugHelpers
   # of average values for each plug within the house."
   def calculate_house_avgLoad(s_i)
     query = "SELECT load FROM AveragePlugLoads WHERE house_id = %d " \
-      "AND slice_index = %d ALLOW FILTERING" % [house_id, s_i]
-
-    # TODO: get rid of ALLOW FILTERING clause!!
+      "AND slice_index = %d" % [house_id, s_i]
 
     results = store.execute(query)
     loads = results.map{|row| row["load"]}
