@@ -33,12 +33,13 @@ module CassandraHelpers
 
   # It's convenient to initialize this here.
   def setup_cassandra
-    puts "<<< SETTING UP CASSANDRA >>>"
+    puts "SETTING UP CASSANDRA..."
 
     client = cassandra_client
 
     # Don't drop and recreate the keyspace as that might disrupt (debug) clients
     # client.execute('DROP KEYSPACE IF EXISTS measurements')
+    puts "> CREATING KEYSPACE"
     begin
       client.use('measurements')
     rescue Cql::QueryError => e
@@ -54,6 +55,8 @@ module CassandraHelpers
     rescue => e
       raise e
     ensure
+
+      puts "> DROPPING TABLES"
 
       tables = [
         "InstantaneousPlugLoads",
@@ -73,6 +76,8 @@ module CassandraHelpers
       #
       # TABLES
       #
+
+      puts "> CREATING TABLES"
 
       # slice_index is a convenience. It could be determined by timestamp.
       table_definition = <<-TABLEDEF
@@ -127,6 +132,8 @@ module CassandraHelpers
       #
       # INDEXES
       #
+
+      puts "> CREATING INDEXES"
 
       index_definition = <<-INDEXDEF
         CREATE INDEX InstantaneousPlugLoadsSliceIndex ON
