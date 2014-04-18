@@ -2,10 +2,9 @@ require 'cql'
 
 module CassandraHelpers
 
-  CASSANDRA_HOST="54.84.14.45"
-  # CASSANDRA_HOST="192.168.50.7"
-  #CASSANDRA_HOST="192.168.33.11"
-  #CASSANDRA_HOST="192.168.1.145"
+  CASSANDRA_HOST="54.86.69.69"
+  #CASSANDRA_HOST="192.168.50.7"
+  @@store = nil
 
   def store
     if @store == nil
@@ -30,6 +29,12 @@ module CassandraHelpers
     value = results.first["value"]
     raise "No base_timestamp set!" if value.nil?
     value.to_i
+  end
+
+  def record_metric(name, value)
+    query = "INSERT INTO Metrics (name, value, when) VALUES ('%s', '%s', dateof(now()))" % [name, value]
+    # query = "UPDATE Metrics SET 'when' = dateof(now()) WHERE KEY IN ('%s', '%s')" % [name, value]
+    store.execute(query)
   end
 
   # It's convenient to initialize this here.
@@ -63,7 +68,8 @@ module CassandraHelpers
         "InstantaneousPlugLoads",
         "AveragePlugLoads",
         "AverageHouseLoads",
-        "Globals"
+        "Globals",
+        "Metrics"
       ]
 
       tables.each do |table|
@@ -129,6 +135,16 @@ module CassandraHelpers
       TABLEDEF
       client.execute(table_definition)
       # client.add(table_definition)
+
+      table_definition = <<-TABLEDEF
+        CREATE TABLE Metrics (
+        name VARCHAR,
+        when TIMESTAMP,
+        value VARCHAR,
+        PRIMARY KEY (name, when)
+        )
+      TABLEDEF
+      client.execute(table_definition)
 
       #
       # INDEXES

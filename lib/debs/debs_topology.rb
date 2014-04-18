@@ -19,10 +19,12 @@ class KafkaTopology < RedStorm::DSL::Topology
 
   include CassandraHelpers
 
+  ZOOKEEPER="54.86.69.25:2181"
+
   spout_config = SpoutConfig.new(
     # KafkaConfig::ZkHosts.new("192.168.50.3:2181", "/brokers"),
-    KafkaConfig::ZkHosts.new("54.84.14.45:2181", "/brokers"),
-    "debs-1",        # topic to read from
+    KafkaConfig::ZkHosts.new(ZOOKEEPER, "/brokers"),
+    "debs-6",        # topic to read from
     "/consumers",  # Zookeeper root path to store the consumer offsets
     "someid"       # Zookeeper consumer id to store the consumer offsets
   )
