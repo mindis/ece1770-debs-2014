@@ -12,14 +12,13 @@ class DebsDataBolt < RedStorm::DSL::Bolt
 
   DEBUG = false
 
-  output_fields :timestamp, :value, :property, :plug_id, :household_id, :house_id
+  output_fields :id, :timestamp, :value, :property, :plug_id, :household_id, :house_id
 
   configure do
     debug DEBUG
   end
 
-  on_receive :emit => true, :ack => true, :anchor => true do |tuple| 
-    # INPUTS FIELDS: :id, :timestamp, :value, :property, :plug_id, :household_id, :house_id
+  on_receive :emit => false, :ack => false, :anchor => false do |tuple| 
     values = tuple[0].to_s.split(",")
     @tuple = {
       :id           => values[0].to_i, 
@@ -30,7 +29,10 @@ class DebsDataBolt < RedStorm::DSL::Bolt
       :household_id => values[5].to_i, 
       :house_id     => values[6].to_i
     }
-    # Uses DebsHelpers
-    data = [timestamp, value, property, plug_id, household_id, house_id]
+    if tuple_contains_load_value?
+      datum = [id, timestamp, value, property, plug_id, household_id, house_id]
+      anchored_emit(tuple, *datum)
+    end
+    ack(tuple)
   end
 end

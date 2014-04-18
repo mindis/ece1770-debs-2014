@@ -15,19 +15,13 @@ class DebsHouseCalcBolt < RedStorm::DSL::Bolt
     debug DEBUG
   end
 
-  # input_fields :timestamp, :house_id, :household_id, :plug_id, :predicted_plug_load
-  output_fields :timestamp, :house_id, :household_id, :plug_id, :predicted_plug_load
+  output_fields :id, :timestamp, :house_id, :household_id, :plug_id, :predicted_plug_load
 
-  # emit is false because we're not always emitting
-  on_receive :emit => false, :ack => false, :anchor => false do |tuple|
+  on_receive :emit => true, :ack => true, :anchor => false do |tuple|
     @tuple = tuple
-
     # if tuple_contains_load_value? # True by virtue of the topology
-      update_current_house_load
-      datum = [timestamp, house_id, household_id, plug_id, predicted_plug_load]
-      anchored_emit(tuple, *datum)
-    # end
-    ack(tuple)
+    update_current_house_load
+    [id, timestamp, house_id, household_id, plug_id, predicted_plug_load]
   end
 
 end

@@ -13,11 +13,11 @@ class DebsHouseholdBolt < RedStorm::DSL::Bolt
     debug DEBUG
   end
 
-  output_fields :timestamp, :value, :property, :plug_id, :household_id, :house_id
+  output_fields :id, :timestamp, :value, :property, :plug_id, :household_id, :house_id
 
-  on_receive :emit => true, :ack => true, :anchor => true do |tuple| 
+  on_receive :emit => true, :ack => true, :anchor => false do |tuple| 
     @tuple = tuple
-    [timestamp, value, property, plug_id, household_id, house_id]
+    [id, timestamp, value, property, plug_id, household_id, house_id]
   end
 
 end

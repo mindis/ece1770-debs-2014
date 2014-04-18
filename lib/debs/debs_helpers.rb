@@ -1,8 +1,8 @@
 module DebsHelpers
 
-  # def id
-  #   @tuple[:id]
-  # end
+  def id
+    @tuple[:id]
+  end
 
   def timestamp
     @tuple[:timestamp]
@@ -80,6 +80,5 @@ module DebsHelpers
   def average(array)
     array.inject(0){|sum,x| sum + x} / array.size
   end
-
 
 end

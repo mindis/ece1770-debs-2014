@@ -15,22 +15,15 @@ class DebsPlugBolt < RedStorm::DSL::Bolt
     debug DEBUG
   end
 
-  # input_fields :id, :timestamp, :value, :property, :plug_id, :household_id, :house_id
-  output_fields :timestamp, :value, :property, :plug_id, :household_id, :house_id
+  output_fields :id, :timestamp, :value, :property, :plug_id, :household_id, :house_id
 
   on_init do
     # nop
   end
 
-  # emit is false because we're not always emitting
-  on_receive :emit => false, :ack => false, :anchor => false do |tuple|
+  on_receive :emit => true, :ack => true, :anchor => false do |tuple|
     @tuple = tuple
-    if tuple_contains_load_value?
-      update_current_plug_load
-      datum = [timestamp, value, property, plug_id, household_id, house_id]
-      anchored_emit(tuple, *datum)
-    end
-    ack(tuple)
+    update_current_plug_load
+    [id, timestamp, value, property, plug_id, household_id, house_id]
   end
-
 end

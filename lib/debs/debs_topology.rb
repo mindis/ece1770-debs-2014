@@ -14,6 +14,7 @@ require 'debs/debs_plug_bolt'
 require 'debs/debs_plug_bolt2'
 require 'debs/debs_house_calc_bolt'
 require 'debs/debs_house_calc_bolt2'
+require 'debs/debs_dummy_client_bolt'
 
 class KafkaTopology < RedStorm::DSL::Topology
 
@@ -29,49 +30,60 @@ class KafkaTopology < RedStorm::DSL::Topology
     "someid"       # Zookeeper consumer id to store the consumer offsets
   )
 
+  # raise "blork"
+
   spout KafkaSpout, [spout_config]
 
   bolt DebsDataBolt, :parallelism => 1 do
-    output_fields :timestamp, :value, :property, :plug_id, :household_id, :house_id
+    output_fields :id, :timestamp, :value, :property, :plug_id, :household_id, :house_id
     source KafkaSpout, :shuffle
     debug false
   end
 
   bolt DebsHouseBolt, :parallelism => 1 do
-    output_fields :timestamp, :value, :property, :plug_id, :household_id, :house_id
+    output_fields :id, :timestamp, :value, :property, :plug_id, :household_id, :house_id
     source DebsDataBolt, :fields => [:house_id]
   end
 
   bolt DebsHouseholdBolt, :parallelism => 1 do
-    output_fields :timestamp, :value, :property, :plug_id, :household_id, :house_id
+    output_fields :id, :timestamp, :value, :property, :plug_id, :household_id, :house_id
     source DebsHouseBolt, :fields => [:household_id]
   end
 
+  ###
+  # In Vagrant, anything past here causes failed tuples due to high latency (>= 30s)
+  ###
+
   bolt DebsPlugBolt, :parallelism => 1 do
-    output_fields :timestamp, :value, :property, :plug_id, :household_id, :house_id
+    output_fields :id, :timestamp, :value, :property, :plug_id, :household_id, :house_id
     source DebsHouseholdBolt, :fields => [:plug_id]
   end
 
-  bolt DebsPlugBolt2, :parallelism => 1 do
-    output_fields :timestamp, :house_id, :household_id, :plug_id, :predicted_plug_load
-    source DebsPlugBolt, :fields => [:plug_id]
-  end
+  # bolt DebsPlugBolt2, :parallelism => 1 do
+  #   output_fields :id, :timestamp, :house_id, :household_id, :plug_id, :predicted_plug_load
+  #   source DebsPlugBolt, :fields => [:plug_id]
+  # end
 
-  bolt DebsHouseCalcBolt, :parallelism => 1 do
-    output_fields :timestamp, :house_id, :household_id, :plug_id, :predicted_plug_load
-    source DebsPlugBolt2, :fields => [:house_id]
-  end
+  # bolt DebsHouseCalcBolt, :parallelism => 1 do
+  #   output_fields :id, :timestamp, :house_id, :household_id, :plug_id, :predicted_plug_load
+  #   source DebsPlugBolt2, :fields => [:house_id]
+  # end
 
-  bolt DebsHouseCalcBolt2, :parallelism => 1 do
-    output_fields :timestamp, :house_id, :predicted_house_load
-    source DebsHouseCalcBolt, :fields => [:house_id]
-  end
+  # bolt DebsHouseCalcBolt2, :parallelism => 1 do
+  #   output_fields :id, :timestamp, :house_id, :predicted_house_load
+  #   source DebsHouseCalcBolt, :fields => [:house_id]
+  # end
+
+  # bolt DebsDummyClientBolt, :parallelism => 1 do
+  #   output_fields :id, :timestamp
+  #   source DebsHouseCalcBolt2, :global
+  # end
 
   configure do |env|
-    debug true
-    max_task_parallelism 1
-    num_workers 1
-    max_spout_pending 1000
+    debug false
+    max_task_parallelism 4
+    num_workers 4
+    max_spout_pending 10000 # 16000
   end
 
   on_submit do |env|
