@@ -2,8 +2,7 @@ require 'cql'
 
 module CassandraHelpers
 
-  CASSANDRA_HOST="54.86.69.69"
-  #CASSANDRA_HOST="192.168.50.7"
+  CASSANDRA_HOST="192.168.50.7"
   @@store = nil
 
   def store
