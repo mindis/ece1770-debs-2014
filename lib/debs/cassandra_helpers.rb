@@ -7,11 +7,11 @@ module CassandraHelpers
   @@store = nil
 
   def store
-    if @store == nil
-      @store = cassandra_client
-      @store.use('measurements')
+    if @@store == nil
+      @@store = cassandra_client
+      @@store.use('measurements')
     end
-    @store
+    @@store
   end
 
   def cassandra_client
