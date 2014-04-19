@@ -2,12 +2,152 @@
 
 - http://www.cse.iitb.ac.in/debs2014/?page_id=42
 
+# READING
+
+http://storm.incubator.apache.org/documentation/Concepts.html
+
+https://github.com/colinsurprenant/redstorm/wiki/Ruby-DSL-Documentation
+
+http://www.michael-noll.com/blog/2012/10/16/understanding-the-parallelism-of-a-storm-topology/#configuring-the-parallelism-of-a-topology
+
+https://github.com/nathanmarz/storm/wiki/Transactional-topologies
+
+
+
+# BENCHMARKING IDEAS
+
+## DEBS Requirements
+
+(1) Per query throughput as a function of the workload for 10, 20, and 40 houses (average, 10th and 90th percentile)
+(2) Per query latency as a function of the workload for 10, 20, and 40 houses (average, 10th and 90th percentile)
+(3) For distributed systems – per query throughput and latency as function of the number of processing nodes
+
+Please note that evaluation should explicitly focus on providing these relative values, i.e., throughput for 10 houses as compared to the throughput for 20 houses. Specifically, the absolute throughput and latency values are of minor importance only and will be used only as a sanity check against the baseline.
+
+The original data file can be pre-processed and split into three separate input files containing 10, 20, and 40 houses. The 10 house data file should contain houses with ids from 0 till 9, and the 20 house data file should contain houses with ids from 0 till 19. Authors are furthermore explicitly encouraged to emphasize following aspects of their solutions: (1) the training and execution of the prediction model and (2) handling of potential data quality issues.
+
+## Things to Investigate
+
+- best topology in terms of # of each bolt ("best" dictated by "Capacity" on bolts being normalized)
+- how does max. (or variance?) Capacity correlate with throughput/latency? I'm assuming it's strongly correlated
+
+## Required Metrics
+
+- number of nodes
+- server load at timely intervals (all servers)
+- cluster throughput at timely intervals
+- 
+
+> aws cloudwatch get-metric-statistics --namespace "AWS/EC2" --metric-name "CPUUtilization" --start-time "2014-04-14" --end-time "2014-04-15" --period 60 --statistics "Average" --dimensions Name=InstanceId,Value=i-cea9a79f
+>> Can we use CloudWatch to save/report throughput?
+
+
+## Questions to Address in the Report
+
+- How does Storm node Capacity relate to throughput/latency?
+ - Initial tests w/ Vagrant. 300000 tuples, parallelism 1...
+ - 
+
 # SETUP
+
+Nimbus
+ - setup code on nimbus machine (w/ Java 1.6 installed). 'ec2' branch. Deploy toplogies from there.
+ - install code
+ - add storm.yml
+ - point to cassandra and kafka servers
+ - update the Kafka topic for a new test run
+ - step through 'cluster.sh' script and tweak redstorm to work with storm.yaml
+ - 
+
+Kafka
+- point to Zookeeper instance
+- ensure Kafka is binding to external IP
+- ensure that supervisor nodes can access it
+- wipe and reinitialize Kafka queue?
+- checkout and setup code
+- update the Kafka topic for a new test run
+- mount DEBS volume at /mnt/debs
+- update IP addresses in load_kafka.rb script
+*** the hostname of the binding interface must match what's in the load_kafka.rb script ***
+- load some entries into Kafka
+
+Cassandra
+- http://www.datastax.com/documentation/cassandra/2.0/cassandra/install/installAMIConnect.html
+- run setup_cassandra script to initialize
+
+Storm
+- update debs_topology.rb to point to Kafka
+- update cassandra_helpers.rb to point to Cassandra
+
+TODO:
+- Cassandra security group has port 9042 open to the world (to allow the supervisor nodes to connect, for some reason)
+
+
+
+
+Cassandra Ops: 
+- http://ec2-54-85-38-151.compute-1.amazonaws.com:8888/opscenter/index.html
+- http://ec2-54-85-38-151.compute-1.amazonaws.com:8888/
+
+
 
 ## AWS
 
 - TODO: Use storm-deploy (https://github.com/nathanmarz/storm-deploy)
  - See http://blog.safaribooksonline.com/2013/12/27/storm-deploy-amazon-ec2/
+ > lein deploy-storm --start --commit 1bcc169f5096e03a4ae117efc65c0f9bcfa2fa22
+
+
+- Try https://github.com/KasperMadsen/storm-deploy-alternative ?
+ - java -jar storm-deploy-alternative.jar deploy mycluster
+ - java -jar storm-deploy-alternative.jar attach mycluster
+
+- install Zookeeper (if necessary) for debugging
+ - apt-get install zookeeper zookeeperd
+
+- Kafka
+ - install kafka (see install-kafka.sh script)
+  - apt-get install scala
+  - wget http://mirror.its.dal.ca/apache/kafka/0.8.1/kafka_2.9.2-0.8.1.tgz
+ - install kafka-src
+  - wget http://apache.mirror.iweb.ca/kafka/0.8.1/kafka-0.8.1-src.tgz
+ - build src package
+  > ./gradlew -PscalaVersion=2.9.2 jar
+  > # ./gradlew -PscalaVersion=2.9.2 test
+  > ./gradlew -PscalaVersion=2.9.2 releaseTarGz -x signArchives
+
+- as local user:
+ - clone the ece1770 repo: 
+  > mkdir src
+  > cd src
+  > git clone https://github.com/dfcarney/ece1770-debs-2014.git
+ - install ruby: 
+  > curl -sSL https://get.rvm.io | bash
+  > source /home/storm/.rvm/scripts/rvm
+  > rvm install jruby-1.7.4
+  > cd ece1770-debs-2014/
+  > gem install bundler
+  > bundle install
+  > 
+
+
+...
+
+- Cassandra:
+  - follow install-cassandra.sh steps from storm-vagrant
+  - change listen_address to be EC2 internal IP
+  - change rpc_address to be 0.0.0.0
+
+- Kafka:
+  - follow install-kafka steps from storm-vagrant
+  - point to zookeeper
+
+- EC2:
+  - be sure to open necessary ports in firewall
+
+- scale by adding more slaves/workers:
+ > java -jar storm-deploy-alternative.jar scaleout mycluster 2 t1.micro 
+
 
 ## Vagrant
 
@@ -40,7 +180,7 @@
 
 ## Local
 
-- For now, develop in 'local mode' with a Vagrant-baseed Kafka server. It's easy to debug.
+- For now, develop in 'local mode' with a Vagrant-based Kafka server. It's easy to debug.
 
 - Changes to the toplogy dependencies and gems require the following to be run:
  > redstorm install
@@ -111,19 +251,39 @@
 
 - [March 30, 2014]
   - Get rid of "ALLOW FILTERING" clause on some Cassandra queries
+  - Get AWS cluster up-and-running:
+   - Tried with https://github.com/nathanmarz/storm-deploy, but storm-0.9.x doesn't work
+   - https://github.com/KasperMadsen/storm-deploy-alternative is promising
+   - Got Cassandra working
+   - Trouble connecting to Kafka to enqueue tuples
 
+- [April ?-8, 2014]
+ - Bootstrap AWS cluster
+ - Bootstrap Cassandra cluster on AWS (1 node not enough!)
 
+- [April 9, 2014]
+ - Get fully working with 3-node Cassandra EC2 cluster (hoorah)
 
-- NEXT: Get working on AWS
+- [April 14, 2014]
+ - Test out benchmarking ideas/setup locally
+
+- ???
+ - Various benchmarking experiments
+
+- [April 17, 2014]
+ - Get preliminary Capacity benchmark results for Vagrant. Bottlenecks are obvious. Move to EC2
+
+- [April 18, 2014]
+ - EC2 benchmarking (Capacity, ?)
 
 
 # Current Issues/TODOs
 
-- Bootstrap a proper AWS cluster and get everything working there.
 - Benchmarking: figure out what to measure and what to vary.
 
 - Need to read more about how Kafka works.
 - Don't calculate house results all the time. Can we do this lazily or on demand?
+ - House calculations depend on plugs
 - Fix 'invalidate_future_results' method
 - More testing/validating results.
 
@@ -172,12 +332,12 @@ Send some messages:
     }
 
     require 'jruby-kafka'
+    topic = "foobar"
 
-    producer_options = {:zk_connect=>"192.168.50.3:2181", :topic_id=>"test", :broker_list=>"192.168.50.3:9092"} 
+    producer_options = {:zk_connect=>"192.168.50.3:2181", :topic_id=>topic, :broker_list=>"192.168.50.3:9092"} 
     producer = Kafka::Producer.new(producer_options)
     producer.connect()
 
-    topic = "testtopic"
     key = "1"
     message = "This is a test"
     producer.sendMsg(topic, key, message)
