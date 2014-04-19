@@ -10,13 +10,7 @@ class DebsDataBolt < RedStorm::DSL::Bolt
   include Java
   include DebsHelpers
 
-  DEBUG = false
-
   output_fields :id, :timestamp, :value, :property, :plug_id, :household_id, :house_id
-
-  configure do
-    debug DEBUG
-  end
 
   on_receive :emit => false, :ack => false, :anchor => false do |tuple| 
     values = tuple[0].to_s.split(",")
@@ -30,7 +24,8 @@ class DebsDataBolt < RedStorm::DSL::Bolt
       :house_id     => values[6].to_i
     }
     if tuple_contains_load_value?
-      datum = [id, timestamp, value, property, plug_id, household_id, house_id]
+      stime = Time.now.to_f
+      datum = [id, timestamp, value, property, plug_id, household_id, house_id, stime]
       anchored_emit(tuple, *datum)
     end
     ack(tuple)

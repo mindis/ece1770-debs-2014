@@ -9,18 +9,12 @@ class DebsHouseCalcBolt2 < RedStorm::DSL::Bolt
   include CassandraHelpers
   include PlugHelpers
 
-  DEBUG = false
-
-  configure do
-    debug DEBUG
-  end
-
-  output_fields :id, :timestamp, :house_id, :predicted_house_load
+  output_fields :id, :timestamp, :house_id, :predicted_house_load, :start_time
 
   on_receive :emit => true, :ack => true, :anchor => false do |tuple|
     @tuple = tuple
     predicted = predict_house_load
-    [id, timestamp, house_id, predicted]
+    [id, timestamp, house_id, predicted, start_time]
   end
 
 end

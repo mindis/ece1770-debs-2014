@@ -32,6 +32,14 @@ module DebsHelpers
     @tuple[:predicted_plug_load]
   end
 
+  def start_time
+    @tuple[:start_time]
+  end
+
+  def end_time
+    @tuple[:end_time]
+  end
+
   def round_down_timestamp(ts = timestamp)
     ts - (ts % slice_duration_in_seconds)
   end
