@@ -2,13 +2,7 @@
 
 include Java
 
-# jar_dir = "/Users/dfcarney/src/ece1770/project/src/storm-vagrant/kafka-0.8.0-src/core/target/scala-2.8.0"
-jar_dir="/usr/local/src/kafka-0.8.1-src/core/build/dependant-libs-2.9.2"
-Dir.glob(File.join(jar_dir, "*.jar")) { |jar|
-  $CLASSPATH << jar
-}
-
-jar_dir="/usr/local/src/kafka-0.8.1-src/core/build/libs"
+jar_dir = "/Users/dfcarney/src/ece1770/project/src/storm-vagrant/kafka-0.8.0-src/core/target/scala-2.8.0"
 Dir.glob(File.join(jar_dir, "*.jar")) { |jar|
   $CLASSPATH << jar
 }
@@ -16,21 +10,19 @@ Dir.glob(File.join(jar_dir, "*.jar")) { |jar|
 require 'jruby-kafka'
 require 'zlib'
 
-topic = "debs"
-producer_options = {:zk_connect=>"localhost:2181", :topic_id=>topic, :broker_list=>"localhost:9092"} 
+topic = "debs-1"
+producer_options = {:zk_connect=>"192.168.50.3:2181", :topic_id=>topic, :broker_list=>"192.168.50.3:9092"} 
 producer = Kafka::Producer.new(producer_options)
 producer.connect()
 
-filepath = "/mnt/debs/sorted.csv.gz"
+filepath = "/Users/dfcarney/src/ece1770/project/sorted.csv.gz"
 fd = File::open(filepath, "r")
 gz = Zlib::GzipReader.new(fd)
-fd = File::open(filepath, "r")
-gz = Zlib::GzipReader.new(fd)
-top
+
 # id, timestamp, value, property, plug_id, household_id, house_id
 @data = []
 count = 0
-max_entries = 2000
+max_entries = 500000
 while(gz.lineno < max_entries) 
   line =  gz.readline.strip
   id, timestamp, value, property, plug_id, household_id, house_id = line.split(",")
