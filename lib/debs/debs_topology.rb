@@ -31,30 +31,33 @@ class KafkaTopology < RedStorm::DSL::Topology
   spout KafkaSpout, [spout_config]
 
   bolt DebsDataBolt, :parallelism => 1 do
-    output_fields :id, :timestamp, :value, :property, :plug_id, :household_id, :house_id
+    output_fields :id, :timestamp, :value, :property, :plug_id, :household_id, :house_id, :start_time
     source KafkaSpout, :shuffle
     debug false
   end
 
+  bolt DebsPlugBolt, :parallelism => 2 do
+    output_fields :id, :timestamp, :value, :property, :plug_id, :household_id, :house_id, :start_time
     source DebsDataBolt, :fields => [:house_id, :household_id, :plug_id]
   end
 
+  bolt DebsPlugBolt2, :parallelism => 2 do
+    output_fields :id, :timestamp, :house_id, :household_id, :plug_id, :predicted_plug_load, :start_time
     source DebsPlugBolt, :fields => [:house_id, :household_id, :plug_id]
   end
 
-
-  bolt DebsHouseCalcBolt, :parallelism => 8 do
-    output_fields :id, :timestamp, :house_id, :household_id, :plug_id, :predicted_plug_load
+  bolt DebsHouseCalcBolt, :parallelism => 2 do
+    output_fields :id, :timestamp, :house_id, :household_id, :plug_id, :predicted_plug_load, :start_time
     source DebsPlugBolt2, :fields => [:house_id]
   end
 
-  bolt DebsHouseCalcBolt2, :parallelism => 8 do
-    output_fields :id, :timestamp, :house_id, :predicted_house_load
+  bolt DebsHouseCalcBolt2, :parallelism => 2 do
+    output_fields :id, :timestamp, :house_id, :predicted_house_load, :start_time
     source DebsHouseCalcBolt, :fields => [:house_id]
   end
 
   bolt DebsDummyClientBolt, :parallelism => 1 do
-    output_fields :id, :timestamp
+    output_fields :id, :timestamp, :start_time, :end_time
     source DebsHouseCalcBolt2, :global
   end
 

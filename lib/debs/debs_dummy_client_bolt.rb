@@ -9,13 +9,7 @@ class DebsDummyClientBolt < RedStorm::DSL::Bolt
   include CassandraHelpers
   include PlugHelpers
 
-  DEBUG = false
-
-  configure do
-    debug DEBUG
-  end
-
-  output_fields :id, :timestamp
+  output_fields :id, :timestamp, :start_time, :end_time
 
   on_init do
     @count = 0
@@ -24,17 +18,24 @@ class DebsDummyClientBolt < RedStorm::DSL::Bolt
 
   on_receive :emit => false, :ack => false, :anchor => false do |tuple|
     @tuple = tuple
+
+    # Latency
+    etime = Time.now.to_f
+    delta = etime - start_time
     
     # We just use this to track throughput
     @count = @count + 1
     @max_id = [@max_id, id].max
+
     if @count % 1000 == 0
-      puts "COUNT_OUT: #{@count}, MAX_ID_OUT: #{@max_id}, CURRENT_ID: #{id}"
+      puts "[CLIENT] COUNT_OUT: #{@count}, MAX_ID_OUT: #{@max_id}, CURRENT_ID: #{id}, DELTA: #{delta}"
       record_metric('count_out', @count)
       record_metric('max_id_out', @max_id)
+      record_metric('current_id_out', id)
+      record_metric('delta_out', delta)
     end
     ack(tuple)
-    tuple
+    [id, timestamp, start_time, etime]
   end
 
 end
