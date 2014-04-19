@@ -20,12 +20,11 @@ class KafkaTopology < RedStorm::DSL::Topology
 
   include CassandraHelpers
 
-  ZOOKEEPER="54.86.69.25:2181"
+  ZOOKEEPER="192.168.50.3:2181"
 
   spout_config = SpoutConfig.new(
-    # KafkaConfig::ZkHosts.new("192.168.50.3:2181", "/brokers"),
     KafkaConfig::ZkHosts.new(ZOOKEEPER, "/brokers"),
-    "debs-6",        # topic to read from
+    "debs-1",      # topic to read from
     "/consumers",  # Zookeeper root path to store the consumer offsets
     "someid"       # Zookeeper consumer id to store the consumer offsets
   )
@@ -79,9 +78,9 @@ class KafkaTopology < RedStorm::DSL::Topology
 
   configure do |env|
     debug false
-    max_task_parallelism 16
-    num_workers 8
-    max_spout_pending 10000 # 16000
+    max_task_parallelism 4
+    num_workers 2
+    max_spout_pending 100 # 16000
   end
 
   on_submit do |env|
