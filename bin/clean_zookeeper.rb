@@ -24,6 +24,9 @@ end
 @z = Zookeeper.new("192.168.50.3:2181")
 children = @z.get_children(:path => "/")[:children]
 
+# delete ["config", "admin", "brokers"] for Kafka
+# rm /tmp/kafka-logs/*
+
 
 Array(children & ["consumers"]).each do |child|
   path = "/" + child
