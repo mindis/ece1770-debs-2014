@@ -8,8 +8,6 @@ require 'debs/debs_helpers'
 require 'debs/cassandra_helpers'
 require 'debs/plug_helpers'
 require 'debs/debs_data_bolt'
-require 'debs/debs_house_bolt'
-require 'debs/debs_household_bolt'
 require 'debs/debs_plug_bolt'
 require 'debs/debs_plug_bolt2'
 require 'debs/debs_house_calc_bolt'
@@ -38,29 +36,12 @@ class KafkaTopology < RedStorm::DSL::Topology
     debug false
   end
 
-  bolt DebsHouseBolt, :parallelism => 1 do
-    output_fields :id, :timestamp, :value, :property, :plug_id, :household_id, :house_id
-    source DebsDataBolt, :fields => [:house_id]
+    source DebsDataBolt, :fields => [:house_id, :household_id, :plug_id]
   end
 
-  bolt DebsHouseholdBolt, :parallelism => 2 do
-    output_fields :id, :timestamp, :value, :property, :plug_id, :household_id, :house_id
-    source DebsHouseBolt, :fields => [:household_id]
+    source DebsPlugBolt, :fields => [:house_id, :household_id, :plug_id]
   end
 
-  ###
-  # In Vagrant, anything past here causes failed tuples due to high latency (>= 30s)
-  ###
-
-  bolt DebsPlugBolt, :parallelism => 8 do
-    output_fields :id, :timestamp, :value, :property, :plug_id, :household_id, :house_id
-    source DebsHouseholdBolt, :fields => [:plug_id]
-  end
-
-  bolt DebsPlugBolt2, :parallelism => 8 do
-    output_fields :id, :timestamp, :house_id, :household_id, :plug_id, :predicted_plug_load
-    source DebsPlugBolt, :fields => [:plug_id]
-  end
 
   bolt DebsHouseCalcBolt, :parallelism => 8 do
     output_fields :id, :timestamp, :house_id, :household_id, :plug_id, :predicted_plug_load
