@@ -67,9 +67,17 @@ class KafkaTopology < RedStorm::DSL::Topology
   end
 
   configure do |env|
+
+    # NOTE: machines (4) -> num_workers (x2 = 8) -> executors (parallalism hint) -> tasks (executors)
+    # The number of workers and executors can be "rebalanced" (i.e. only reduced), but not the number of tasks.
+    # The 'parallelism' hint above specifies the initial number of executors (and tasks). It's 1:1 by default.
+
+    # redstorm creates 4 worker 'slots' for each machine by default
+    # The config below specifies how many should be used by this topology.
+
     debug false
-    max_task_parallelism 16
-    num_workers 8
+    max_task_parallelism 8
+    num_workers 8 # <-- how many slots to use. up to 4 per machine, but keep it at 2 (1 per CPU on m1.large)
     max_spout_pending 10000 # 16000
   end
 
