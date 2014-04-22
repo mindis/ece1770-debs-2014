@@ -24,7 +24,7 @@ module CassandraHelpers
         raise e
       else
         @store = nil
-        retru
+        retry
       end
     end
     results
