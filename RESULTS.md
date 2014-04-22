@@ -519,7 +519,7 @@ CASSANDRA STATS
 STORM STATS
 
 debs_house_calc_bolt  16  16  334780  334500  0.969 19.787  334540  19.495  334560  0 
-debs_plug_bolt  16  16  692300  692080  0.826 23.537  346040  23.502  345980  0 java.lang.RuntimeException: org.jruby.exceptions.RaiseException: (QueryError) no keyspace has been specified at backtype.storm.utils.DisruptorQueue.consumeBatchToCursor(DisruptorQueue.java:90) at ba
+debs_plug_bolt  16  16  692300  692080  0.826 23.537  346040  23.502  345980  0 
 debs_house_calc_bolt2 16  16  334820  334560  0.663 14.234  334540  14.297  334540  0 
 debs_plug_bolt2 16  16  346220  345960  0.527 14.933  345960  14.947  345960  0 
 debs_data_bolt  1 1 1107980 1107940 0.107 0.145 738680  0.139 738660  0 
