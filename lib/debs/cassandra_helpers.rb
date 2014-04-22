@@ -7,11 +7,27 @@ module CassandraHelpers
   @@store = nil
 
   def store
-    if @@store == nil
-      @@store = cassandra_client
-      @@store.use('measurements')
+    if @store == nil
+      @store = cassandra_client
+      @store.use('measurements')
     end
-    @@store
+    @store
+  end
+
+  def execute_query(query)
+    exceptions = 0
+    begin
+      results = store.execute(query)
+    rescue => e
+      exceptions = exceptions + 1
+      if (exceptions > 3)
+        raise e
+      else
+        @store = nil
+        retru
+      end
+    end
+    results
   end
 
   def cassandra_client
@@ -20,12 +36,12 @@ module CassandraHelpers
 
   def set_base_timestamp(ts)
     query = "INSERT INTO Globals (name, value) VALUES ('%s', '%s')" % ["base_timestamp", ts.to_s]
-    store.execute(query)
+    execute_query(query)
   end
 
   def get_base_timestamp
     query = "SELECT value FROM Globals WHERE name = '%s'" % ["base_timestamp"]
-    results = store.execute(query)
+    results = execute_query(query)
     value = results.first["value"]
     raise "No base_timestamp set!" if value.nil?
     value.to_i
@@ -34,7 +50,7 @@ module CassandraHelpers
   def record_metric(name, value)
     query = "INSERT INTO Metrics (name, value, when) VALUES ('%s', '%s', dateof(now()))" % [name, value]
     # query = "UPDATE Metrics SET 'when' = dateof(now()) WHERE KEY IN ('%s', '%s')" % [name, value]
-    store.execute(query)
+    execute_query(query)
   end
 
   # It's convenient to initialize this here.

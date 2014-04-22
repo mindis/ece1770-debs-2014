@@ -9,7 +9,7 @@ module PlugHelpers
     s_i = slice_index(ts) # convenience for faster lookups
     query = "INSERT INTO InstantaneousPlugLoads (house_id, household_id, plug_id, timestamp, slice_index, load) VALUES (%d, %d, %d, %d, %d, %f)" % 
       [house_id, household_id, plug_id, ts, s_i, load]
-    store.execute(query)            
+    execute_query(query)            
     puts "EXECUTED: #{query}" if DEBUG
   end
 
@@ -18,7 +18,7 @@ module PlugHelpers
       "AND household_id = %d "\
       "AND plug_id = %d "\
       "AND timestamp = %d" % [house_id, household_id, plug_id, ts]
-    results = store.execute(query)
+    results = execute_query(query)
     if results.count != 1
       puts "Invalid number of results! #{results}"
       raise Exception
@@ -41,7 +41,7 @@ module PlugHelpers
       "AND household_id = %d "\
       "AND plug_id = %d "\
       "AND slice_index = %d" % [h_id, hh_id, p_id, s_i]
-    results = store.execute(query)
+    results = execute_query(query)
     if results.count != 1
       puts "Invalid number of results for slice_index (#{s_i})! #{results.map{|r| [r]}}"
       raise Exception
@@ -57,7 +57,7 @@ module PlugHelpers
       "AND household_id = %d "\
       "AND plug_id = %d "\
       "AND slice_index = %d" % [house_id, household_id, plug_id, s_i]
-    results = store.execute(query)
+    results = execute_query(query)
     loads = results.map{|row| row["load"]}
     puts "EXECUTED: #{query}, GOT #{loads}" if DEBUG
     average(loads)
@@ -69,14 +69,14 @@ module PlugHelpers
     end
     query = "INSERT INTO AveragePlugLoads (house_id, household_id, plug_id, slice_index, load, predicted) VALUES (%d, %d, %d, %d, %f, #{predicted})" % 
       [house_id, household_id, plug_id, s_i, load]
-    store.execute(query)
+    execute_query(query)
     puts "EXECUTED: #{query}" if DEBUG
   end
 
   def get_house_avgLoad(s_i, h_i = house_id)
     query = "SELECT load FROM AverageHouseLoads WHERE house_id = %d " \
       "AND slice_index = %d" % [h_i, s_i]
-    results = store.execute(query)
+    results = execute_query(query)
     if results.count != 1
       puts "Invalid number of results for slice_index (#{s_i})! #{results.map{|r| [r]}}"
       raise Exception
@@ -92,7 +92,7 @@ module PlugHelpers
     query = "SELECT load FROM AveragePlugLoads WHERE house_id = %d " \
       "AND slice_index = %d" % [house_id, s_i]
 
-    results = store.execute(query)
+    results = execute_query(query)
     loads = results.map{|row| row["load"]}
     puts "EXECUTED: #{query}, GOT #{loads}" if DEBUG
     sum(loads)
@@ -104,7 +104,7 @@ module PlugHelpers
     end
     query = "INSERT INTO AverageHouseLoads (house_id, slice_index, load, predicted) VALUES (%d, %d, %f, #{predicted})" % 
       [house_id, s_i, load]
-    store.execute(query)
+    execute_query(query)
     puts "EXECUTED: #{query}" if DEBUG
   end
 
@@ -124,7 +124,7 @@ module PlugHelpers
       "AND household_id = %d "\
       "AND plug_id = %d "\
       "AND slice_index IN (%s)" % [house_id, household_id, plug_id, indexes.join(",")]
-    results = store.execute(query)
+    results = execute_query(query)
     loads = results.map{|row| row["load"]}
     puts "EXECUTED: #{query}, GOT #{loads}" if DEBUG
     loads
