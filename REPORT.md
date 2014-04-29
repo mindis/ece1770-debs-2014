@@ -38,6 +38,19 @@ machines -> workers -> executors -> tasks
 
 Vagrant: testing high throughput is problematic because: Cassandra load, 30s default timeout for tuples, ...
 
+Cassandra: throughput heavily sensitive to Cassandra latencies
+
+Deploying from Nimbus server is big time-saver
+
+Maven dependencies.
+
+Java 1.6 vs. 1.7 issues
+
+KafkaSpout setup
+KafkaSpout incompatabilities (0.7 v 0.8; no errors!)
+
+
+
 # Future Ideas
 
 "In contrast, bolts that do aggregations or joins may delay acking a tuple until after it has computed a result based on a bunch of tuples. Aggregations and joins will commonly multi-anchor their output tuples as well. These things fall outside the simpler pattern of IBasicBolt." (https://github.com/nathanmarz/storm/wiki/Guaranteeing-message-processing)
