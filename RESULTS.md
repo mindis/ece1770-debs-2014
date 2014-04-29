@@ -1,9 +1,10 @@
 # INITIALIZATION
 
 - Delete all Kafka topics:
-  > ./kafka-topics.sh --zookeeper=192.168.50.3 --topic debs-3 --delete
-  > ./kafka-topics.sh --zookeeper=192.168.50.3 --topic debs-1 --create --partitions 2 --replication 1
-  >  /usr/local/src/kafka/bin/kafka-topics.sh --zookeeper=54.86.59.43 --topic debs-11 --partitions 2 --replication 1 --create
+  > ./kafka-topics.sh --zookeeper=54.86.78.180 --topic debs-3 --delete
+  > ./kafka-topics.sh --zookeeper=54.86.78.180 --topic debs-1 --create --partitions 2 --replication 1
+  > /usr/local/src/kafka/bin/kafka-topics.sh --zookeeper=54.86.78.180 --partitions 2 --replication 1 --create --topic debs-13b
+  > /usr/local/src/kafka/bin/kafka-topics.sh --zookeeper=54.86.78.180 --delete --topic debs-15a
 
 
 
@@ -30,10 +31,10 @@
   X x supervisor (m1.large)
   3 x Cassandra (m3.large)
 
-ZOOKEEPER=54.86.59.43 (port 2181)
-KAFKA=ec2-54-86-70-160.compute-1.amazonaws.com (port 9092)
+NIMBUS=54.86.54.174
+ZOOKEEPER=54.86.78.180 (port 2181)
+KAFKA=ec2-54-85-4-84.compute-1.amazonaws.com (port 9092)
 CASSANDRA=54.85.123.167 (port 9042)
-NIMBUS=54.86.58.245
 
 Steps:
 
@@ -44,7 +45,8 @@ Steps:
  - test: ssh to Nimbus machine
 
 2. setup Storm code base on Nimbus machine:
-  sudo apt-get install git curl
+  ssh storm@NIMBUS
+  sudo apt-get install -y git curl
   mkdir -p ./src
   cd src
   git clone https://github.com/dfcarney/ece1770-debs-2014.git
@@ -52,6 +54,7 @@ Steps:
   source /home/storm/.rvm/scripts/rvm
   rvm install jruby-1.7.4
   cd ece1770-debs-2014/
+  git checkout --track -b ec2 origin/ec2
   gem install bundler
   bundle install
   redstorm install
@@ -60,18 +63,21 @@ Steps:
     ...
  - setup storm.yaml
  - point debs_toplogy to kafka server
+ - modify redstorm expectation for location of storm.yaml
 
 2a. storm.yaml
 
 storm.local.dir: "/mnt/storm"
 storm.zookeeper.servers:
-  - "54.86.59.43"
-nimbus.host: "54.86.58.245"
+  - "54.86.78.180"
+nimbus.host: "54.86.54.174"
 drpc.servers:
-  - "172.31.6.88"
+  - "172.31.9.101"
 storm.local.dir: "/mnt/storm"
 
 3. Boot Kafka server
+ > ssh -i dfcarney-debs.pem  ubuntu@54.86.78.180 (ensure the Firewall is open)
+
  - configure Kafka
   - point to Zookeeper instance
   - update "host.name" ==> bind to external/public hostname (use this in the load_kafka script)
@@ -87,14 +93,14 @@ storm.local.dir: "/mnt/storm"
  - Ensure the instances are in the same availability zone as the Storm cluster
  - using DataStax http://www.datastax.com/documentation/cassandra/2.0/cassandra/install/installAMILaunch.html
    --clustername myDSCcluster --totalnodes 5 --version community
-
-
  - Identify master node, connect over http: on port 8888
+ - Enable 512 MB cache & perform rolling restart
 
 5. Connect Cassandra
   - verify supervisor & nimbus nodes can connect to Cassandra (on port 9042)
+  - modify cassandra_helper.rb
 
-6. Run setup_cassandra.rb script from Nimbus
+6. Run setup_cassandra.rb script on Nimbus host
 
 
 # REBALANCING
@@ -485,6 +491,8 @@ CASSANDRA STATS
 
 # TEST 13: Same as TEST 11, but executors = 4 at start, not 8
 
+## Trial 1
+
 === Kafka loaded at 0m30s
 
 STORM STATS
@@ -508,11 +516,37 @@ CASSANDRA STATS
   Read request latency: 1.01 ms/op
   OS Load (Avg): 0.72 (1.64 max)
 
+## Trial 2
+
+=== Kafka loaded at 0m40s
+
+STORM STATS
+  debs_plug_bolt  4 4 256580  256580  0.966 11.226  259280  11.199  259280  0 
+  debs_house_calc_bolt  4 4 241420  241420  0.955 10.406  241440  10.340  241420  0 
+  debs_house_calc_bolt2 4 4 241520  241520  0.545 6.389 241460  6.393 241500  0 
+  debs_plug_bolt2 4 4 259280  259280  0.514 6.299 259260  6.262 259280  0 
+  debs_data_bolt  1 1 298500  298500  0.139 0.278 595860  0.261 595860  0 
+  debs_dummy_client_bolt  1 1 0 0 0.023 0.096 241320  0.062 241340  0
+
+kafka_spout 1 1 596260  596260  5372.877  469720  115820
+
+10 m Latency: 3288.434 ms
+
+CASSANDRA STATS
+  Write requests: 1433.02/s
+  Write request latency: 0.92 ms/op
+  Read requests: 561.07/s
+  Read request latency: 0.94 ms/op
+  OS Load (Avg): 0.55 (1.62 max)
+
+
 
 # TEST 14: Same as TEST 11, but executors = 16 at start, not 8
 
 -    max_task_parallelism 8
 +    max_task_parallelism 16
+
+## Trial 1
 
 === Kafka loaded at 5m00s
 
@@ -542,6 +576,103 @@ CASSANDRA STATS
 
 10m Latency: 1617.712 ms (and dropping)
 
+## Trial 2
+
+=== Kafka loaded at 3m00s
+
+STORM STATS
+  debs_house_calc_bolt  16  16  294240  294240  0.998 20.107  294280  20.030  294260  0
+  debs_plug_bolt  16  16  312200  312200  0.897 24.260  311920  24.381  311900  0
+  debs_house_calc_bolt2 16  16  294320  294320  0.750 15.778  294260  15.919  294180  0 
+  debs_data_bolt  1 1 340460  340460  0.605 0.844 684800  0.891 684780  0 
+  debs_plug_bolt2 16  16  311900  311900  0.565 20.004  311860  15.643  311840  0 
+  debs_dummy_client_bolt  1 1 0 0 0.078 0.376 223700  0.251 223700  0
+
+kafka_spout 1 1 683160  683160  6170.581  561400  111120
+
+10 m Latency: 4709.809
+
+CASSANDRA STATS
+  Write requests: 1906.65
+  Write request latency: 1.50
+  Read requests: 758.91
+  Read request latency: 1.63
+  OS Load (Avg): 1.42 (2.75 max)
+
+... And at 5 minutes later...
+
+10m Latency: 4011.327
+
+
+# TEST 15: 2 Executors
+
+max_task_parallelism 2
+num_workers 8
+max_spout_pending 10000
+
+## Trial 1
+
+=== Kafka loaded at 0m30s
+
+STORM STATS
+
+  debs_house_calc_bolt  2 2 195640  195640  0.977 8.303 195640  8.275 195680  0 
+  debs_plug_bolt  2 2 213980  213980  0.972 8.260 214540  8.368 214540  0 
+  debs_plug_bolt2 2 2 214540  214540  0.674 5.901 214520  5.909 214540  0 
+  debs_house_calc_bolt2 2 2 195580  195580  0.654 5.932 195540  5.858 195580  0 
+  debs_data_bolt  1 1 222220  222220  0.092 0.259 444340  0.240 444340  0 
+  debs_dummy_client_bolt  1 1 0 0 0.021 0.109 195580  0.077 195580  0
+
+kafka_spout 1 1 444760  444760  15967.598 368920  65720
+
+10 m Latency: 15421.089
+
+CASSANDRA STATS
+  Write requests: 1202.69
+  Write request latency: 0.76
+  Read requests: 476.41
+  Read request latency: 0.80
+  OS Load (Avg): 0.45 (1.20 max)
+
+
+## Trial 2
+
+Deployed at 2014-04-22, 12:47 PM
+
+=== Kafka loaded at 0m30s
+
+STORM STATS
+debs_house_calc_bolt  2 2 195160  195160  0.977 8.385 195200  8.306 195160  0 
+debs_plug_bolt  2 2 214360  214360  0.966 8.288 212820  8.324 212820  0 
+debs_plug_bolt2 2 2 213100  213100  0.664 5.736 213080  5.797 213080  0 
+debs_house_calc_bolt2 2 2 195440  195440  0.626 5.696 195400  5.680 195420  0 
+debs_data_bolt  1 1 219360  219360  0.092 0.248 441100  0.235 441100  0 
+debs_dummy_client_bolt  1 1 0 0 0.022 0.099 195660  0.067 195640  0
+
+kafka_spout 1 1 437060  437060  14786.370 349980  80400
+
+10 m Latency: 13771.491
+
+CASSANDRA STATS
+  Write requests: 1212.03
+  Write request latency: 0.75
+  Read requests: 469.48
+  Read request latency: 0.80
+  OS Load (Avg): 0.43 (1.24 max)
+
+# TEST 16: 1-h test, 8 Executors, rebalanced at 10 min mark
+
+1-h test, 8 Executors, rebalanced at 10 min mark
+
+max_task_parallelism 8
+num_workers 8
+max_spout_pending 10000
+
+# Trial 1
+
+=== Kafka loaded at 0m30s, rebalanced at 
+
+==> Ran just like shorter trials, but Cassandra kept on going haywire around the 50-minute mark. Unsure as to why. Read/write latencies skyrocketed, then connections aborted. Spent 1/2 a day trying to diagnose, but was unable to track down a good root cause.
 
 
 # TEST X: Query 1, Per-query throughput & latency, 40 houses
